@@ -19,15 +19,15 @@ enum ArcFaceEmbedderError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .modelNotFound:
-            return "ArcFace.mlpackage/mlmodelc not found in the app bundle. Run tools/convert_arcface.py, then add glance/Models/ArcFace.mlpackage to the Xcode project."
+            return "应用包中缺少 ArcFace.mlpackage/mlmodelc。请运行 tools/convert_arcface.py，并将 glance/Models/ArcFace.mlpackage 添加到 Xcode 工程。"
         case .modelLoadFailed(let detail):
-            return "Failed to load the ArcFace Core ML model: \(detail)"
+            return "无法载入 ArcFace Core ML 模型：\(detail)"
         case .pixelBufferCreationFailed:
-            return "Couldn't prepare the aligned face image for Core ML."
+            return "无法为 Core ML 准备对齐后的人脸图像。"
         case .unexpectedInputSize(let got, let expected):
-            return "ArcFaceEmbedder expects a \(expected)x\(expected) aligned image, got \(got.0)x\(got.1). Run the face through FaceAligner first."
+            return "ArcFaceEmbedder 需要 \(expected)×\(expected) 的对齐图像，实际为 \(got.0)×\(got.1)。请先通过 FaceAligner 对齐人脸。"
         case .unexpectedOutput(let detail):
-            return "ArcFace model produced an unexpected output: \(detail)"
+            return "ArcFace 模型输出异常：\(detail)"
         }
     }
 }
@@ -106,10 +106,10 @@ nonisolated final class ArcFaceEmbedder: FaceEmbedder, @unchecked Sendable {
         let output = try model.prediction(from: input)
 
         guard let multiArray = output.featureValue(for: Self.outputName)?.multiArrayValue else {
-            throw ArcFaceEmbedderError.unexpectedOutput("no '\(Self.outputName)' output found")
+            throw ArcFaceEmbedderError.unexpectedOutput("未找到“\(Self.outputName)”输出")
         }
         guard multiArray.count == embeddingDimension else {
-            throw ArcFaceEmbedderError.unexpectedOutput("expected \(embeddingDimension) floats, got \(multiArray.count)")
+            throw ArcFaceEmbedderError.unexpectedOutput("应有 \(embeddingDimension) 个浮点数，实际为 \(multiArray.count) 个")
         }
 
         let raw = Self.floatVector(from: multiArray)

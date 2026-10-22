@@ -1,3 +1,5 @@
+> **简体中文分支：** 应用默认使用简体中文。安装、构建与版本区别请查看 [中文说明](README.zh-CN.md)。原版自动更新已停用，请从 [本分支 Releases](https://github.com/adonis-lsh/glance/releases) 获取中文版。
+
 <h1 align="center">
   <br>
   <a href="https://tryglance.app"><img src="glance/Assets.xcassets/appicon.imageset/appicon.png" alt="Glance" width="150"></a>

@@ -1,0 +1,83 @@
+name: 构建简体中文版
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'glance/**'
+      - 'glance.xcodeproj/**'
+      - '.github/workflows/build-chinese.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: 选择 Xcode 26 或更新版本
+        run: |
+          XCODE_APP=$(python3 - <<'PY'
+          import pathlib, re
+          candidates = []
+          for app in pathlib.Path('/Applications').glob('Xcode*.app'):
+              match = re.fullmatch(r'Xcode_(\d+(?:\.\d+)*).app', app.name)
+              if match and int(match[1].split('.')[0]) >= 26:
+                  candidates.append((tuple(map(int, match[1].split('.'))), app))
+          assert candidates, '构建需要 Xcode 26+'
+          print(max(candidates)[1])
+          PY
+          )
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          xcodebuild -version
+      - name: 构建 Intel 与 Apple Silicon 通用包
+        run: |
+          set -o pipefail
+          xcodebuild -project glance.xcodeproj -scheme glance \
+            -configuration Release -destination 'generic/platform=macOS' \
+            -derivedDataPath build ARCHS='arm64 x86_64' ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO build | tee build.log
+      - name: 签名、验证并生成安装包
+        run: |
+          set -euo pipefail
+          APP=build/Build/Products/Release/glance.app
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          lipo -verify_arch arm64 x86_64 "$APP/Contents/MacOS/glance"
+          python3 - <<'PY'
+          import pathlib, plistlib
+          app = pathlib.Path('build/Build/Products/Release/glance.app')
+          info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
+          assert info['CFBundleDevelopmentRegion'] == 'zh-Hans', info
+          assert info['GlanceChineseBuild'] is True
+          assert 'SUFeedURL' not in info
+          assert '摄像头' in info['NSCameraUsageDescription']
+          assert (app / 'Contents/Resources/zh-Hans.lproj/InfoPlist.strings').is_file()
+          assert list((app / 'Contents/Resources').rglob('*.mlmodelc')), '缺少人脸识别模型'
+          print('中文默认语言、权限文案、独立更新标记与模型资源检查通过')
+          PY
+          mkdir -p dist staging
+          ditto "$APP" staging/glance.app
+          cp README.zh-CN.md staging/使用说明.txt
+          cp LICENSE staging/LICENSE
+          ln -s /Applications staging/Applications
+          hdiutil create -volname 'Glance 简体中文版' -srcfolder staging \
+            -ov -format UDZO dist/Glance-zh-CN-universal.dmg
+          ditto -c -k --sequesterRsrc --keepParent "$APP" dist/Glance-zh-CN-universal.zip
+          cp README.zh-CN.md dist/使用说明.txt
+          cp LICENSE dist/LICENSE
+          (cd dist && shasum -a 256 Glance-zh-CN-universal.dmg Glance-zh-CN-universal.zip > SHA256SUMS.txt)
+      - name: 保存构建日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 构建日志
+          path: build.log
+      - name: 保存中文版安装包
+        uses: actions/upload-artifact@v4
+        with:
+          name: Glance-zh-CN-universal
+          path: dist/*

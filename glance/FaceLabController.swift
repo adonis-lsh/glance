@@ -70,7 +70,7 @@ final class FaceLabController {
         livenessAnalyzer.reset()
         currentLiveness = .empty
         currentGeometry = .empty
-        log("Liveness cues reset.")
+        log("已重置活体检测信号。")
     }
 
     var enrollName: String = ""
@@ -94,9 +94,9 @@ final class FaceLabController {
         }
         store.reloadIfUnlocked()
         if pipeline.usingFallbackEmbedder {
-            log("ArcFace unavailable (\(pipeline.fallbackReason ?? "unknown reason")) — using Vision Feature Print instead.")
+            log("ArcFace 不可用（\(pipeline.fallbackReason ?? "原因未知")），已改用 Vision Feature Print。")
         } else {
-            log("Using \(pipeline.embedder.name).")
+            log("正在使用 \(pipeline.embedder.name)。")
         }
     }
 
@@ -105,7 +105,7 @@ final class FaceLabController {
         if let error = camera.errorMessage {
             log(error)
         } else {
-            log("Camera started.")
+            log("摄像头已启动。")
         }
     }
 
@@ -117,7 +117,7 @@ final class FaceLabController {
         currentLiveness = .empty
         currentGeometry = .empty
         lastLivenessFrame = nil
-        log("Camera stopped.")
+        log("摄像头已停止。")
     }
 
     /// Mirrors `POCController.unlockSession()` so Face Lab can unlock the session without leaving this page.
@@ -125,10 +125,10 @@ final class FaceLabController {
         sessionError = nil
         do {
             try await Task.detached(priority: .userInitiated) {
-                try SecureCredentialManager.unlockSession(reason: "Authenticate to use Face Lab")
+                try SecureCredentialManager.unlockSession(reason: "验证身份以使用人脸实验室")
             }.value
             store.reloadIfUnlocked()
-            log("Session unlocked.")
+            log("会话已解锁。")
         } catch {
             sessionError = error.localizedDescription
         }
@@ -170,7 +170,7 @@ final class FaceLabController {
         } catch {
             detectedFaces = []
             currentResult = nil
-            log("Detection error: \(error.localizedDescription)")
+            log("检测错误：\(error.localizedDescription)")
         }
     }
 
@@ -178,12 +178,12 @@ final class FaceLabController {
 
     func captureSample() {
         guard let result = currentResult else {
-            log("No face detected — can't capture a sample.")
+            log("未检测到人脸，无法采集样本。")
             return
         }
         let trimmedName = enrollName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
-            log("Enter a name before capturing a sample.")
+            log("请先输入名称，再采集样本。")
             return
         }
         do {
@@ -193,18 +193,18 @@ final class FaceLabController {
                 embedder: pipeline.embedder,
                 quality: result.quality
             )
-            log("Captured sample for \"\(trimmedName)\" (\(result.embedding.count)-dim, \(result.alignmentTier.rawValue), quality \(Self.qualityLabel(result.quality))).")
+            log("已为“\(trimmedName)”采集样本（\(result.embedding.count) 维，\(result.alignmentTier.rawValue)，质量 \(Self.qualityLabel(result.quality))）。")
         } catch {
-            log("Couldn't save sample: \(error.localizedDescription)")
+            log("无法保存样本：\(error.localizedDescription)")
         }
     }
 
     func deleteIdentity(_ identity: FaceIdentity) {
         do {
             try store.delete(identity)
-            log("Deleted \"\(identity.name)\".")
+            log("已删除“\(identity.name)”。")
         } catch {
-            log("Couldn't delete: \(error.localizedDescription)")
+            log("无法删除：\(error.localizedDescription)")
         }
     }
 
@@ -220,19 +220,19 @@ final class FaceLabController {
     /// two live sessions with different configurations.
     func startFullOnboarding() {
         camera.stop()
-        log("Starting the full onboarding flow.")
+        log("正在启动完整的首次设置流程。")
         OnboardingController.startFlow()
     }
 
     func startAddIdentity() {
         camera.stop()
-        log("Starting guided enrollment for a new identity.")
+        log("正在启动新人脸引导录入。")
         OnboardingController.startAddIdentity()
     }
 
     func startRecapture(of identity: FaceIdentity) {
         camera.stop()
-        log("Starting guided re-capture of \"\(identity.name)\".")
+        log("正在为“\(identity.name)”启动引导重新采集。")
         OnboardingController.startRecapture(of: identity)
     }
 
@@ -245,13 +245,13 @@ final class FaceLabController {
 
     func recognize() {
         guard let result = currentResult else {
-            log("No face detected — can't recognize.")
+            log("未检测到人脸，无法识别。")
             recognitionResults = []
             bestMatch = nil
             return
         }
         guard !store.identities.isEmpty else {
-            log("No enrolled identities yet — capture a sample first.")
+            log("尚未录入人脸，请先采集样本。")
             recognitionResults = []
             bestMatch = nil
             return
@@ -274,9 +274,9 @@ final class FaceLabController {
         }
 
         if let best = scored.first {
-            let verdict = (bestMatch != nil) ? "MATCH" : "no match"
-            let staleNote = best.identity.isStale(comparedTo: embedder) ? " [STALE — re-enroll under current model]" : ""
-            log("Recognize: best = \(best.identity.name) centroid=\(String(format: "%.3f", best.centroidSimilarity)) max=\(String(format: "%.3f", best.maxSampleSimilarity)) -> \(verdict)\(staleNote)")
+            let verdict = (bestMatch != nil) ? "匹配成功" : "未匹配"
+            let staleNote = best.identity.isStale(comparedTo: embedder) ? "［模型已变更，请使用当前模型重新录入］" : ""
+            log("识别：最佳匹配 = \(best.identity.name)，中心相似度 = \(String(format: "%.3f", best.centroidSimilarity))，最大值 = \(String(format: "%.3f", best.maxSampleSimilarity)) → \(verdict)\(staleNote)")
         }
     }
 
@@ -289,11 +289,11 @@ final class FaceLabController {
     /// threshold slider actually gates on).
     func recordCalibrationSample(isGenuine: Bool) {
         guard let top = recognitionResults.first else {
-            log("Nothing to record — run Identify first.")
+            log("暂无可记录结果，请先开始识别。")
             return
         }
         calibrationSamples.append(CalibrationSample(centroidSimilarity: top.centroidSimilarity, isGenuine: isGenuine))
-        log("Calibration: recorded \(isGenuine ? "genuine" : "impostor") sample at \(String(format: "%.3f", top.centroidSimilarity)).")
+        log("校准：已记录\(isGenuine ? "本人" : "他人")样本，相似度 \(String(format: "%.3f", top.centroidSimilarity))。")
     }
 
     func clearCalibrationSamples() {

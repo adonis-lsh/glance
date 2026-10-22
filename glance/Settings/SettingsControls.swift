@@ -35,7 +35,7 @@ struct SettingsInfoButton: View {
                 .foregroundStyle(SettingsMetrics.textTertiary)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("More information")
+        .accessibilityLabel("更多信息")
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             Text(text)
                 .font(.system(size: 12))
@@ -692,8 +692,8 @@ struct UnlockAnimationPicker: View {
 
     var body: some View {
         SettingsLabeledOptionRow(
-            title: "Style",
-            subtitle: "The animation that appears when unlocking your Mac"
+            title: "样式",
+            subtitle: "解锁 Mac 时显示的动画"
         ) {
             ForEach(UnlockAnimationStyle.selectableCases) { style in
                 SettingsOptionTile(
@@ -779,8 +779,8 @@ struct LivenessModePicker: View {
 
     var body: some View {
         SettingsLabeledOptionRow(
-            title: "Strength",
-            subtitle: "Light includes basic protection. Heavy requires you to blink or slightly move your head."
+            title: "强度",
+            subtitle: "轻度提供基础防护；严格模式需要眨眼或轻微转动头部。"
         ) {
             ForEach(LivenessMode.allCases) { mode in
                 SettingsOptionTile(
@@ -819,7 +819,7 @@ struct UnlockTriggerPicker: View {
     var isEnabled: Bool = true
 
     var body: some View {
-        SettingsLabeledOptionRow(title: "Triggers", subtitle: "Select multiple") {
+        SettingsLabeledOptionRow(title: "触发时机", subtitle: "可多选") {
             ForEach(UnlockTrigger.allCases) { trigger in
                 let isSelected = selection.contains(trigger)
                 SettingsOptionTile(

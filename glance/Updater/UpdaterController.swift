@@ -56,11 +56,14 @@ final class UpdaterController {
     /// Safe to call even with a placeholder `SUPublicEDKey` — `SPUStandardUpdaterController` logs and alerts on a misconfigured
     /// Sparkle setup itself rather than throwing.
     func start() {
+        // 中文分支通过自己的 Releases 手动更新，禁止上游包覆盖中文。
+        guard Bundle.main.object(forInfoDictionaryKey: "GlanceChineseBuild") as? Bool != true else { return }
         controller.startUpdater()
     }
 
     /// User-initiated "Check for Updates" — shows Sparkle's standard progress UI.
     func checkForUpdates() {
+        guard Bundle.main.object(forInfoDictionaryKey: "GlanceChineseBuild") as? Bool != true else { return }
         controller.checkForUpdates(nil)
     }
 }

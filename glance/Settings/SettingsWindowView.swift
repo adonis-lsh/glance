@@ -140,7 +140,7 @@ struct SettingsWindowView: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .help("Refresh camera list")
+                .help("刷新摄像头列表")
             }
 
             SessionLockButton(pocController: environment.pocController)
@@ -209,7 +209,7 @@ private struct LazyFaceLabPage: View {
             if let controller {
                 FaceLabView(controller: controller)
             } else {
-                ProgressView("Loading Face Lab…")
+                ProgressView("正在载入人脸实验室…")
                     .frame(maxWidth: .infinity, minHeight: SettingsMetrics.emptyStateMinHeight)
                     .task {
                         // Yield once so the loading state can draw before Core ML

@@ -16,9 +16,9 @@ enum KeystrokeError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .accessibilityNotGranted:
-            return "Accessibility permission required. Open System Settings → Privacy & Security → Accessibility and enable glance."
+            return "需要辅助功能权限。请打开“系统设置 → 隐私与安全性 → 辅助功能”，为 Glance 启用权限。"
         case .eventCreationFailed:
-            return "Couldn't create CGEvent for keystroke."
+            return "无法创建用于输入按键的 CGEvent。"
         }
     }
 }

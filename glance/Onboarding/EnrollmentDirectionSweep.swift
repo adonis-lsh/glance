@@ -43,14 +43,14 @@ enum EnrollmentSweepDirection: CaseIterable, Hashable {
 
     var previewLabel: String {
         switch self {
-        case .left:        return "Left"
-        case .right:       return "Right"
-        case .up:          return "Up"
-        case .down:        return "Down"
-        case .topLeft:     return "Top left"
-        case .topRight:    return "Top right"
-        case .bottomLeft:  return "Bottom left"
-        case .bottomRight: return "Bottom right"
+        case .left:        return "左"
+        case .right:       return "右"
+        case .up:          return "上"
+        case .down:        return "下"
+        case .topLeft:     return "左上"
+        case .topRight:    return "右上"
+        case .bottomLeft:  return "左下"
+        case .bottomRight: return "右下"
         }
     }
 }
@@ -340,7 +340,7 @@ private struct SweepStreak: View {
 
 // MARK: - Previews
 
-#Preview("All directions") {
+#Preview("所有方向") {
     let columns = [
         GridItem(.flexible(), spacing: 8),
         GridItem(.flexible(), spacing: 8),

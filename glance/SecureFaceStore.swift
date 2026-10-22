@@ -14,7 +14,7 @@ enum SecureFaceStoreError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sessionLocked:
-            return "Session is locked. Authenticate with Touch ID to access enrolled faces."
+            return "会话已锁定，请使用 Touch ID 验证身份后访问已录入的人脸。"
         }
     }
 }

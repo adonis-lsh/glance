@@ -22,7 +22,7 @@ struct AboutSettingsPage: View {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = info?["CFBundleVersion"] as? String ?? "1"
-        return "Version \(short) (\(build))"
+        return "版本 \(short)（\(build)）· 中文版"
     }
 
     var body: some View {
@@ -48,26 +48,21 @@ struct AboutSettingsPage: View {
 
         SettingsGroup {
             SettingsActionRowContent(
-                title: "Check for Updates",
-                buttonTitle: "Check",
-                isEnabled: updater.canCheckForUpdates
+                title: "中文版更新",
+                buttonTitle: "查看版本"
             ) {
-                updater.checkForUpdates()
-            }
-
-            SettingsGroupDivider()
-
-            SettingsRowContent(title: "Automatically check for updates") {
-                GlanceToggle(isOn: $updater.automaticallyChecksForUpdates)
+                if let url = URL(string: "https://github.com/adonis-lsh/glance/releases") {
+                    NSWorkspace.shared.open(url)
+                }
             }
 
             SettingsGroupDivider()
 
             SettingsActionRowContent(
-                title: "Send Feedback",
-                buttonTitle: "Send"
+                title: "反馈问题",
+                buttonTitle: "反馈"
             ) {
-                if let url = URL(string: "https://tryglance.app/feedback") {
+                if let url = URL(string: "https://github.com/adonis-lsh/glance/issues") {
                     NSWorkspace.shared.open(url)
                 }
             }

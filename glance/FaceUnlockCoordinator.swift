@@ -40,7 +40,7 @@ final class FaceUnlockCoordinator {
     /// frames before giving the failure animation.
     private let wrongFaceGraceDuration: Duration = .seconds(2)
 
-    private(set) var statusMessage = "Idle"
+    private(set) var statusMessage = "待机"
     private(set) var lastOutcome: String?
 
     private var hasArmedForCurrentLock = false
@@ -114,11 +114,11 @@ final class FaceUnlockCoordinator {
         guard NotchGeometry.preferredScreen() != nil else { return }
 
         guard SecureCredentialManager.isSessionUnlocked else {
-            statusMessage = "Face unlock is on, but the session is locked — authenticate once from Password settings first."
+            statusMessage = "人脸解锁已启用，但会话处于锁定状态。请先在“密码”设置中验证一次身份。"
             return
         }
         guard SecureCredentialManager.hasStoredPassword() else {
-            statusMessage = "Face unlock is on, but no password is stored yet."
+            statusMessage = "人脸解锁已启用，但尚未保存登录密码。"
             return
         }
 
@@ -251,7 +251,7 @@ final class FaceUnlockCoordinator {
         if showsUI {
             NotchOverlayController.shared.beginScanning()
         }
-        statusMessage = "Looking for your face…"
+        statusMessage = "正在寻找你的人脸…"
 
         let outcome = await observeScanWindow(
             deadline: Date().addingTimeInterval(scanWindowDuration),
@@ -270,28 +270,28 @@ final class FaceUnlockCoordinator {
                 NotchOverlayController.shared.finish(success: true)
             }
         case .consistentlyWrongFace:
-            statusMessage = "Face not recognized."
+            statusMessage = "未能识别人脸。"
             if showsUI {
                 NotchOverlayController.shared.finish(success: false)
-                statusMessage = "Face not recognized — hover the notch to try again."
+                statusMessage = "未能识别人脸，请将指针悬停在刘海处重试。"
                 scheduleAutoRetryIfEnabled(after: NotchOverlayController.shared.failureHoldDuration)
             } else {
                 scheduleAutoRetryIfEnabled(after: headlessRetryDelay)
             }
         case .spoofSuspected:
-            statusMessage = "Couldn't confirm a live face."
+            statusMessage = "未能确认是真人人脸。"
             if showsUI {
                 NotchOverlayController.shared.finish(success: false)
-                statusMessage = "Couldn't confirm a live face — hover the notch to try again."
+                statusMessage = "未能确认是真人人脸，请将指针悬停在刘海处重试。"
                 scheduleAutoRetryIfEnabled(after: NotchOverlayController.shared.failureHoldDuration)
             } else {
                 scheduleAutoRetryIfEnabled(after: headlessRetryDelay)
             }
         case .noResolution:
-            statusMessage = "No face detected."
+            statusMessage = "未检测到人脸。"
             if showsUI {
                 // No explicit collapse call: NotchOverlayController's own scanning timeout fires on the same mark and collapses itself.
-                statusMessage = "No face detected — hover the notch to try again."
+                statusMessage = "未检测到人脸，请将指针悬停在刘海处重试。"
                 scheduleAutoRetryIfEnabled(after: NotchOverlayController.shared.collapseAnimationDuration)
             } else {
                 scheduleAutoRetryIfEnabled(after: headlessRetryDelay)
@@ -407,11 +407,11 @@ final class FaceUnlockCoordinator {
             }
 
             if let readyMatch, livenessConfirmed {
-                statusMessage = "Recognized — unlocking…"
+                statusMessage = "识别成功，正在解锁…"
                 let livenessNote = livenessEnabled
-                    ? (confirmingCue.map { "live via \($0.title)" } ?? "liveness clear")
-                    : "liveness off"
-                lastOutcome = "Matched \(readyMatch.identity.name) at \(String(format: "%.3f", readyMatch.centroidSimilarity)), \(livenessNote)."
+                    ? (confirmingCue.map { "通过“\($0.title)”确认活体" } ?? "活体检测通过")
+                    : "活体检测已关闭"
+                lastOutcome = "已匹配“\(readyMatch.identity.name)”，相似度 \(String(format: "%.3f", readyMatch.centroidSimilarity))，\(livenessNote)。"
                 await pocController.injectStoredPassword(requireAuthoritativeLock: true)
                 return .matched
             }

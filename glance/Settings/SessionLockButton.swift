@@ -55,8 +55,8 @@ struct SessionLockButton: View {
     }
 
     private var label: String {
-        if pocController.isSessionUnlocked { return "Session unlocked" }
-        return isUnlocking ? "Authenticating…" : "Session locked"
+        if pocController.isSessionUnlocked { return "会话已解锁" }
+        return isUnlocking ? "正在验证…" : "会话已锁定"
     }
 
     private func toggleSession() {

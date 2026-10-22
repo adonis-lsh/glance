@@ -105,10 +105,10 @@
 				};
 			};
 			buildConfigurationList = 601C4937300FFC8400D3DE9D /* Build configuration list for PBXProject "glance" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
+				"zh-Hans",
 				Base,
 			);
 			mainGroup = 601C4933300FFC8400D3DE9D;
@@ -284,7 +284,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = glance/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCameraUsageDescription = "glance uses the camera on-device to recognize your face for unlocking your Mac, and to let you enroll and preview your face in Settings.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Glance 使用摄像头在本机识别人脸以解锁 Mac，并用于在人脸设置中录入和预览人脸。";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -320,7 +320,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = glance/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCameraUsageDescription = "glance uses the camera on-device to recognize your face for unlocking your Mac, and to let you enroll and preview your face in Settings.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Glance 使用摄像头在本机识别人脸以解锁 Mac，并用于在人脸设置中录入和预览人脸。";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

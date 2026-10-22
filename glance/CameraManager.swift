@@ -57,10 +57,10 @@ final class CameraManager: NSObject {
         }
 
         guard permission == .granted else {
-            errorMessage = "Camera access not granted (status: \(describe(status))). " +
+            errorMessage = "未获得摄像头权限（状态：\(describe(status))）。" +
                 (status == .restricted
-                    ? "macOS reports this as *restricted* — not a simple user denial. This usually means Screen Time content restrictions or an MDM/profile policy is blocking camera access for this app; toggling it in System Settings > Privacy & Security > Camera won't help until that restriction is lifted."
-                    : "Enable it in System Settings > Privacy & Security > Camera. If glance isn't listed there, quit the app, run `tccutil reset Camera com.jonathan.glance` in Terminal, then relaunch so macOS asks again.")
+                    ? "macOS 报告摄像头访问受到限制，通常是屏幕使用时间或设备管理策略阻止了访问。需要先解除该限制，仅在隐私设置中切换摄像头权限无法解决。"
+                    : "请在“系统设置 → 隐私与安全性 → 摄像头”中启用权限。若列表中没有 Glance，可退出应用，在终端运行 `tccutil reset Camera com.jonathan.glance`，再重新打开应用以请求授权。")
             return
         }
 
@@ -121,7 +121,7 @@ final class CameraManager: NSObject {
     /// Called on every `start()` so a camera preference change in Settings takes effect without an app restart.
     private func reconcileDeviceIfNeeded() {
         guard let device = CameraDeviceCatalog.resolvedDevice() else {
-            errorMessage = "No camera device found."
+            errorMessage = "未找到摄像头。"
             return
         }
         guard device.uniqueID != currentInput?.device.uniqueID else { return }
@@ -136,7 +136,7 @@ final class CameraManager: NSObject {
             selectHighestResolutionFormat(for: device)
         } else {
             currentInput = nil
-            errorMessage = "No camera device found."
+            errorMessage = "未找到摄像头。"
         }
         session.commitConfiguration()
     }
@@ -155,7 +155,7 @@ final class CameraManager: NSObject {
             device.activeFormat = best
             device.unlockForConfiguration()
         } catch {
-            errorMessage = "Couldn't select the camera's highest-resolution format: \(error.localizedDescription)"
+            errorMessage = "无法选择摄像头的最高分辨率格式：\(error.localizedDescription)"
         }
     }
 

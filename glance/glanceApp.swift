@@ -26,7 +26,7 @@ struct glanceApp: App {
         DispatchQueue.main.async {
             delegate.bindOpenWindowAction { open(id: "settings") }
         }
-        return Window("Glance Settings", id: "settings") {
+        return Window("Glance 设置", id: "settings") {
             SettingsWindowView(environment: appDelegate.environment)
                 .onAppear {
                     delegate.bindOpenWindowAction { open(id: "settings") }
@@ -139,12 +139,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(sessionItem)
         sessionMenuItem = sessionItem
 
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettingsWindow), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: "设置", action: #selector(openSettingsWindow), keyEquivalent: ",")
         settingsItem.target = self
         settingsItem.image = NSImage(systemSymbolName: "gearshape.fill", accessibilityDescription: nil)
         menu.addItem(settingsItem)
 
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quitItem.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: nil)
         menu.addItem(quitItem)
 
@@ -210,7 +210,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func updateSessionMenuItem() {
         guard let sessionMenuItem else { return }
         let isUnlocked = environment.pocController.isSessionUnlocked
-        sessionMenuItem.title = isUnlocked ? "Session Unlocked" : "Session Locked"
+        sessionMenuItem.title = isUnlocked ? "会话已解锁" : "会话已锁定"
         sessionMenuItem.image = NSImage(
             systemSymbolName: isUnlocked ? "lock.open.fill" : "lock.fill",
             accessibilityDescription: nil

@@ -44,8 +44,8 @@ struct RecognitionSettingsPage: View {
     private var lockedState: some View {
         SettingsEmptyStateView(
             icon: "lock.fill",
-            message: "Session locked",
-            buttonTitle: isUnlocking ? "Authenticating…" : "Unlock session",
+            message: "会话已锁定",
+            buttonTitle: isUnlocking ? "正在验证…" : "解锁会话",
             isButtonEnabled: !isUnlocking,
             caption: sessionError,
             action: unlock
@@ -58,7 +58,7 @@ struct RecognitionSettingsPage: View {
         VStack(alignment: .leading, spacing: 20) {
             SettingsGroup {
                 SettingsOptionSliderRowContent(
-                    title: "Match confidence",
+                    title: "匹配置信度",
                     stepLabels: MatchConfidenceLevel.allCases.map(\.title),
                     index: matchConfidenceIndex,
                     stopCount: MatchConfidenceLevel.allCases.count
@@ -67,7 +67,7 @@ struct RecognitionSettingsPage: View {
                 SettingsGroupDivider()
 
                 SettingsOptionSliderRowContent(
-                    title: "Detection distance",
+                    title: "检测距离",
                     stepLabels: DetectionDistanceLevel.allCases.map(\.title),
                     index: detectionDistanceIndex,
                     stopCount: DetectionDistanceLevel.allCases.count
@@ -75,11 +75,11 @@ struct RecognitionSettingsPage: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                SettingsSectionTitle(text: "Liveness")
+                SettingsSectionTitle(text: "活体检测")
                 SettingsGroup {
                     SettingsRowContent(
-                        title: "Liveness detection",
-                        subtitle: "Checks that you're a live person, not a photo. May increase unlock time.",
+                        title: "活体检测",
+                        subtitle: "检查镜头前是否为真人，排除照片。可能增加解锁时间。",
                         subtitleMaxWidth: SettingsMetrics.rowSubtitleMaxWidth
                     ) {
                         GlanceToggle(isOn: $settings.livenessChecksEnabled)
@@ -142,9 +142,9 @@ private enum MatchConfidenceLevel: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .lessStrict: return "Less strict"
-        case .standard: return "Default"
-        case .moreStrict: return "More strict"
+        case .lessStrict: return "较宽松"
+        case .standard: return "默认"
+        case .moreStrict: return "较严格"
         }
     }
 
@@ -177,9 +177,9 @@ private enum DetectionDistanceLevel: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .close: return "Close"
-        case .standard: return "Default"
-        case .far: return "Far"
+        case .close: return "近"
+        case .standard: return "默认"
+        case .far: return "远"
         }
     }
 
