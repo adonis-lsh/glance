@@ -55,9 +55,17 @@ jobs:
           assert info['GlanceChineseBuild'] is True
           assert 'SUFeedURL' not in info
           assert '摄像头' in info['NSCameraUsageDescription']
+          assert info.get('CFBundleIconName') == 'AppIcon', '应用图标名称错误'
+          icon = info.get('CFBundleIconFile', '')
+          assert icon, '缺少应用图标声明'
+          if not icon.endswith('.icns'):
+              icon += '.icns'
+          icon_path = app / 'Contents/Resources' / icon
+          assert icon_path.is_file(), f'缺少应用图标文件：{icon_path}'
+          assert icon_path.read_bytes()[:4] == b'icns', '应用图标文件格式错误'
           assert (app / 'Contents/Resources/zh-Hans.lproj/InfoPlist.strings').is_file()
           assert list((app / 'Contents/Resources').rglob('*.mlmodelc')), '缺少人脸识别模型'
-          print('中文默认语言、权限文案、独立更新标记与模型资源检查通过')
+          print('应用图标、中文默认语言、权限文案、独立更新标记与模型资源检查通过')
           PY
           mkdir -p dist staging
           ditto "$APP" staging/glance.app
