@@ -62,6 +62,12 @@ struct FaceLabView: View {
         .onDisappear {
             controller.stop()
         }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)) { _ in
+            controller.stop()
+        }
+        .onReceive(DistributedNotificationCenter.default().publisher(for: Notification.Name("com.apple.screenIsLocked"))) { _ in
+            controller.stop()
+        }
         // Guided enrollment runs in the notch, outside this view hierarchy, so nothing else prompts a re-read once
         // it closes. Same trick YourFaceSettingsPage uses.
         .onChange(of: NotchOverlayController.shared.phase) { _, newPhase in

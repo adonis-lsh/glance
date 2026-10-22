@@ -43,7 +43,7 @@ final class POCController {
         sessionError = nil
         do {
             try await Task.detached(priority: .userInitiated) {
-                try SecureCredentialManager.unlockSession(reason: "验证身份以设置或使用 Glance")
+                try await SecureCredentialManager.unlockSession(reason: "验证身份以设置或使用 Glance")
             }.value
             isSessionUnlocked = true
         } catch {
@@ -90,33 +90,49 @@ final class POCController {
     /// buffer before returning. When `requireAuthoritativeLock` is true (the
     /// auto-trigger path), refuses to inject unless the CGSession dictionary
     /// confirms the screen is actually locked.
-    func injectStoredPassword(requireAuthoritativeLock: Bool = false) async {
+    @discardableResult
+    func injectStoredPassword(requireAuthoritativeLock: Bool = false) async -> Bool {
         guard KeystrokeInjector.isAccessibilityTrusted() else {
             statusMessage = "尚未获得辅助功能权限，请在系统设置中为 Glance 启用此权限。"
-            return
+            return false
         }
         guard SecureCredentialManager.isSessionUnlocked else {
-            statusMessage = "会话已锁定，请先通过 Touch ID 验证身份。"
-            return
+            statusMessage = "会话已锁定，请先通过系统身份验证。"
+            return false
         }
-
-        if requireAuthoritativeLock {
-            guard LockMonitor.isScreenActuallyLocked() else {
-                statusMessage = "已跳过：CGSession 显示屏幕当前并未锁定。"
-                return
-            }
+        if requireAuthoritativeLock, !LockMonitor.isScreenActuallyLocked() {
+            statusMessage = "锁屏状态未确认，已取消输入密码。"
+            return false
         }
-
         statusMessage = "正在输入密码…"
         do {
             try await Task.detached(priority: .userInitiated) {
                 var bytes = try SecureCredentialManager.readPassword()
                 defer { bytes.resetBytes(in: 0..<bytes.count) }
+                // Check again after the potentially blocking keychain read.
+                if requireAuthoritativeLock, !LockMonitor.isScreenActuallyLocked() {
+                    throw KeystrokeError.screenNotLocked
+                }
                 try KeystrokeInjector.typeAndReturn(bytes)
             }.value
-            statusMessage = "已于 \(Date().formatted(date: .omitted, time: .standard)) 输入已保存的密码并按回车"
+            if requireAuthoritativeLock {
+                let deadline = ContinuousClock.now + .seconds(2)
+                while ContinuousClock.now < deadline, !Task.isCancelled {
+                    if LockMonitor.screenLockState() == false {
+                        statusMessage = "已确认屏幕解锁。"
+                        return true
+                    }
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+                statusMessage = "已发送解锁输入，但屏幕仍锁定或状态无法确认。请检查登录密码和锁屏输入框。"
+                return false
+            }
+            statusMessage = "已输入保存的密码并按回车。"
+            return true
         } catch {
             statusMessage = "输入密码失败：\(error.localizedDescription)"
+            return false
         }
     }
+
 }

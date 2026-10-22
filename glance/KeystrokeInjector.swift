@@ -12,6 +12,7 @@ import CoreGraphics
 enum KeystrokeError: LocalizedError {
     case accessibilityNotGranted
     case eventCreationFailed
+    case screenNotLocked
 
     var errorDescription: String? {
         switch self {
@@ -19,6 +20,8 @@ enum KeystrokeError: LocalizedError {
             return "需要辅助功能权限。请打开“系统设置 → 隐私与安全性 → 辅助功能”，为 Glance 启用权限。"
         case .eventCreationFailed:
             return "无法创建用于输入按键的 CGEvent。"
+        case .screenNotLocked:
+            return "锁屏状态已改变，已取消输入密码。"
         }
     }
 }

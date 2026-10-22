@@ -40,19 +40,35 @@ jobs:
             -configuration Release -destination 'generic/platform=macOS' \
             -derivedDataPath build ARCHS='arm64 x86_64' ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO build | tee build.log
+      - name: 验证兼容版凭据与解锁控制逻辑
+        run: |
+          set -euo pipefail
+          swiftc -O -o build/credential-selftest glance/LoginKeychainStore.swift \
+            glance/SecureCredentialManager.swift tools/credential_selftest.swift
+          codesign --force --sign - build/credential-selftest
+          build/credential-selftest
+          swiftc -O -o build/injection-selftest glance/POCController.swift tools/unlock_injection_selftest.swift
+          build/injection-selftest
       - name: 签名、验证并生成安装包
         run: |
           set -euo pipefail
           APP=build/Build/Products/Release/Glance.app
-          codesign --force --deep --sign - "$APP"
+          bash tools/sign_adhoc.sh "$APP"
           codesign --verify --deep --strict --verbose=2 "$APP"
           lipo "$APP/Contents/MacOS/Glance" -verify_arch arm64 x86_64
           python3 - <<'PY'
-          import pathlib, plistlib
+          import pathlib, plistlib, subprocess
           app = pathlib.Path('build/Build/Products/Release/Glance.app')
           info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
           assert info['CFBundleDevelopmentRegion'] == 'zh-Hans', info
           assert info['GlanceChineseBuild'] is True
+          assert info['GlanceCredentialStorage'] == 'login-keychain-v1'
+          entitlements = plistlib.loads(subprocess.run(
+              ['codesign', '-d', '--entitlements', '-', '--xml', str(app)],
+              check=True, capture_output=True).stdout)
+          assert entitlements.get('com.apple.security.device.camera') is True
+          assert 'keychain-access-groups' not in entitlements
+          assert 'com.apple.application-identifier' not in entitlements
           assert info['CFBundleName'] == 'Glance'
           assert info['CFBundleDisplayName'] == 'Glance'
           assert info['CFBundleExecutable'] == 'Glance'

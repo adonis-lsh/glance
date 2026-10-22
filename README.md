@@ -1,4 +1,4 @@
-> **简体中文分支：** 应用默认使用简体中文。安装、构建与版本区别请查看 [中文说明](README.zh-CN.md)。原版自动更新已停用，请从 [本分支 Releases](https://github.com/adonis-lsh/glance/releases) 获取中文版。
+> **简体中文兼容分支：** 应用默认中文，使用不需要开发者证书的登录钥匙串方案。身份验证保护边界与原版不同，首次需要重新录入；请先阅读 [中文说明](README.zh-CN.md)。请从 [本分支 Releases](https://github.com/adonis-lsh/glance/releases) 获取中文版。
 
 <h1 align="center">
   <br>

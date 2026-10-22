@@ -10,6 +10,7 @@
 import Foundation
 import CoreGraphics
 import Observation
+import OSLog
 
 @Observable
 @MainActor
@@ -42,6 +43,8 @@ final class FaceUnlockCoordinator {
 
     private(set) var statusMessage = "待机"
     private(set) var lastOutcome: String?
+    private(set) var lastScanSummary: String?
+    private let log = Logger(subsystem: "com.adonis-lsh.glance", category: "Unlock")
 
     private var hasArmedForCurrentLock = false
     /// One-shot per lock session — an auto-retry that could itself auto-retry would loop the camera for the whole lock session.
@@ -243,7 +246,25 @@ final class FaceUnlockCoordinator {
 
         if let error = camera.errorMessage {
             statusMessage = error
+            lastOutcome = error
+            lastScanSummary = "摄像头启动失败，尚未进行人脸匹配。"
+            log.error("scan outcome=camera_start_failed")
             camera.stop()
+            return
+        }
+        statusMessage = "正在等待摄像头图像…"
+        let frameReady = await camera.waitForFirstFrame()
+        guard generation == scanGeneration, !Task.isCancelled else { return }
+        guard frameReady else {
+            statusMessage = camera.errorMessage ?? "摄像头没有输出图像。"
+            lastOutcome = statusMessage
+            lastScanSummary = "收到 0 帧，尚未进行人脸匹配。"
+            log.error("scan outcome=camera_no_frames")
+            camera.stop()
+            if self.showsUI {
+                NotchOverlayController.shared.beginScanning()
+                NotchOverlayController.shared.finish(success: false)
+            }
             return
         }
 
@@ -254,7 +275,7 @@ final class FaceUnlockCoordinator {
         statusMessage = "正在寻找你的人脸…"
 
         let outcome = await observeScanWindow(
-            deadline: Date().addingTimeInterval(scanWindowDuration),
+            deadline: ContinuousClock.now + .seconds(scanWindowDuration),
             requireOverlayScanning: showsUI
         )
 
@@ -262,6 +283,7 @@ final class FaceUnlockCoordinator {
         guard generation == scanGeneration else { return }
 
         camera.stop()
+        log.info("scan outcome=\(String(describing: outcome), privacy: .public)")
 
         switch outcome {
         case .matched:
@@ -269,8 +291,23 @@ final class FaceUnlockCoordinator {
             if showsUI {
                 NotchOverlayController.shared.finish(success: true)
             }
+        case .unlockNotConfirmed:
+            statusMessage = pocController.statusMessage
+            lastOutcome = statusMessage
+            if showsUI { NotchOverlayController.shared.finish(success: false) }
+            // Never automatically submit a password again after an unconfirmed
+            // attempt: a wrong saved password must not cause repeated logins.
+        case .cameraUnavailable:
+            statusMessage = camera.errorMessage ?? "摄像头运行中断。"
+            lastOutcome = statusMessage
+            if showsUI { NotchOverlayController.shared.finish(success: false) }
+        case .livenessUnconfirmed:
+            statusMessage = "已匹配人脸，但活体检测尚未通过。请按当前检测模式眨眼或轻微转头后重试。"
+            lastOutcome = statusMessage
+            if showsUI { NotchOverlayController.shared.finish(success: false) }
         case .consistentlyWrongFace:
-            statusMessage = "未能识别人脸。"
+            statusMessage = "检测到人脸，但与已启用的人脸不匹配。请检查录入模型和当前光线。"
+            lastOutcome = statusMessage
             if showsUI {
                 NotchOverlayController.shared.finish(success: false)
                 statusMessage = "未能识别人脸，请将指针悬停在刘海处重试。"
@@ -279,7 +316,7 @@ final class FaceUnlockCoordinator {
                 scheduleAutoRetryIfEnabled(after: headlessRetryDelay)
             }
         case .spoofSuspected:
-            statusMessage = "未能确认是真人人脸。"
+            statusMessage = "活体检测拒绝了本次扫描。"
             if showsUI {
                 NotchOverlayController.shared.finish(success: false)
                 statusMessage = "未能确认是真人人脸，请将指针悬停在刘海处重试。"
@@ -288,7 +325,8 @@ final class FaceUnlockCoordinator {
                 scheduleAutoRetryIfEnabled(after: headlessRetryDelay)
             }
         case .noResolution:
-            statusMessage = "未检测到人脸。"
+            statusMessage = "未检测到可用人脸，请检查摄像头预览、距离和光线。"
+            lastOutcome = statusMessage
             if showsUI {
                 // No explicit collapse call: NotchOverlayController's own scanning timeout fires on the same mark and collapses itself.
                 statusMessage = "未检测到人脸，请将指针悬停在刘海处重试。"
@@ -318,6 +356,9 @@ final class FaceUnlockCoordinator {
 
     private enum ScanOutcome {
         case matched
+        case unlockNotConfirmed
+        case cameraUnavailable
+        case livenessUnconfirmed
         case consistentlyWrongFace
         /// A deny cue (glare, device rectangle) fired — actively rejected as a spoof regardless of match. Same failure path as `.consistentlyWrongFace`.
         case spoofSuspected
@@ -328,7 +369,7 @@ final class FaceUnlockCoordinator {
     /// liveness never fails the scan by staying undecided, it just keeps scanning until `deadline`.
     /// `requireOverlayScanning` bails early once the overlay's own timeout collapses the UI — only applied when there is an
     /// overlay, since headlessly `phase` never becomes `.scanning` at all.
-    private func observeScanWindow(deadline: Date, requireOverlayScanning: Bool) async -> ScanOutcome {
+    private func observeScanWindow(deadline: ContinuousClock.Instant, requireOverlayScanning: Bool) async -> ScanOutcome {
         let livenessEnabled = GlanceSettings.shared.livenessChecksEnabled
         let liveness = LivenessAnalyzer()
         liveness.modeProvider = { GlanceSettings.shared.livenessMode }
@@ -344,10 +385,18 @@ final class FaceUnlockCoordinator {
         var lastFaceBoundingBox: CGRect?
         /// Cheap way to detect "no new camera frame yet" vs. "fresh frame" — without it a repeat frame would corrupt the liveness motion signal.
         var lastProcessedFrameID: UInt64?
+        var frameCount = 0
+        var faceCount = 0
+        var observedMatch = false
+        defer {
+            lastScanSummary = "处理 \(frameCount) 帧；有效人脸 \(faceCount) 帧；匹配\(observedMatch ? "通过" : "未通过")；活体\(livenessConfirmed ? "通过" : "未通过")。"
+            log.info("scan summary frames=\(frameCount) faces=\(faceCount) matched=\(observedMatch) live=\(livenessConfirmed)")
+        }
 
-        while Date() < deadline, !Task.isCancelled,
+        while ContinuousClock.now < deadline, !Task.isCancelled,
               !requireOverlayScanning || NotchOverlayController.shared.phase == .scanning {
             guard LockMonitor.isScreenActuallyLocked() else { return .noResolution }
+            if camera.errorMessage != nil { return .cameraUnavailable }
 
             guard let frame = camera.currentFrame, frame.id != lastProcessedFrameID else {
                 // 20ms keeps the liveness window's sample count high while staying close to the camera's native ~33ms cadence.
@@ -355,6 +404,7 @@ final class FaceUnlockCoordinator {
                 continue
             }
             lastProcessedFrameID = frame.id
+            frameCount += 1
 
             let pipeline = self.pipeline
             let previousBoundingBox = lastFaceBoundingBox
@@ -370,6 +420,7 @@ final class FaceUnlockCoordinator {
                 try? await Task.sleep(nanoseconds: 20_000_000)
                 continue
             }
+            faceCount += 1
             lastFaceBoundingBox = result.face.normalizedBoundingBox
 
             // Fed regardless of match, so liveness stays a genuinely independent gate rather than one starved by recognition confidence.
@@ -396,6 +447,7 @@ final class FaceUnlockCoordinator {
             if let matched {
                 wrongFaceStartedAt = nil
                 readyMatch = matched
+                observedMatch = true
             } else {
                 readyMatch = nil
                 if wrongFaceStartedAt == nil {
@@ -406,18 +458,19 @@ final class FaceUnlockCoordinator {
                 }
             }
 
-            if let readyMatch, livenessConfirmed {
+            if readyMatch != nil, livenessConfirmed {
                 statusMessage = "识别成功，正在解锁…"
                 let livenessNote = livenessEnabled
                     ? (confirmingCue.map { "通过“\($0.title)”确认活体" } ?? "活体检测通过")
                     : "活体检测已关闭"
-                lastOutcome = "已匹配“\(readyMatch.identity.name)”，相似度 \(String(format: "%.3f", readyMatch.centroidSimilarity))，\(livenessNote)。"
-                await pocController.injectStoredPassword(requireAuthoritativeLock: true)
-                return .matched
+                lastOutcome = "人脸匹配通过，\(livenessNote)。"
+                let unlocked = await pocController.injectStoredPassword(requireAuthoritativeLock: true)
+                return unlocked ? .matched : .unlockNotConfirmed
             }
 
             try? await Task.sleep(nanoseconds: 20_000_000)
         }
+        if observedMatch, !livenessConfirmed { return .livenessUnconfirmed }
         return .noResolution
     }
 }

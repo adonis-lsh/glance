@@ -38,10 +38,26 @@ final class CameraManager: NSObject {
 
     /// Handed to the delegate outside the actor; only ever touched via `Task { @MainActor ... }`.
     private let framePublisher = FramePublisher()
+    private var streamGeneration: UInt64 = 0
+    private nonisolated(unsafe) var runtimeErrorObserver: NSObjectProtocol?
 
     override init() {
         super.init()
         framePublisher.owner = self
+        runtimeErrorObserver = NotificationCenter.default.addObserver(
+            forName: AVCaptureSession.runtimeErrorNotification, object: session, queue: nil
+        ) { [weak self] notification in
+            let error = notification.userInfo?[AVCaptureSessionErrorKey] as? NSError
+            let detail = error.map { "\($0.domain) \($0.code)：\($0.localizedDescription)" } ?? "未知捕获错误"
+            Task { @MainActor [weak self] in
+                self?.errorMessage = "摄像头运行失败（\(detail)）。"
+                self?.isRunning = false
+            }
+        }
+    }
+
+    deinit {
+        if let runtimeErrorObserver { NotificationCenter.default.removeObserver(runtimeErrorObserver) }
     }
 
     func start() async {
@@ -65,18 +81,41 @@ final class CameraManager: NSObject {
         }
 
         errorMessage = nil
+        streamGeneration &+= 1
+        framePublisher.setGeneration(streamGeneration)
+        currentFrame = nil
         configureSessionIfNeeded()
         reconcileDeviceIfNeeded()
+        guard errorMessage == nil else { return }
 
-        sessionQueue.async { [session] in
-            if !session.isRunning {
-                session.startRunning()
+        let running = await withCheckedContinuation { continuation in
+            sessionQueue.async { [session] in
+                if !session.isRunning { session.startRunning() }
+                continuation.resume(returning: session.isRunning)
             }
         }
-        isRunning = true
+        isRunning = running && errorMessage == nil
+        if !isRunning, errorMessage == nil { errorMessage = "摄像头未能启动，请检查设备是否可用。" }
+    }
+
+    /// Starting a capture session can succeed while its graph produces no
+    /// frames. Recognition must not spend its scan window on that condition.
+    func waitForFirstFrame(timeout: Duration = .seconds(3)) async -> Bool {
+        let deadline = ContinuousClock.now + timeout
+        while ContinuousClock.now < deadline, !Task.isCancelled {
+            if errorMessage != nil { return false }
+            if currentFrame != nil { return true }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        if !Task.isCancelled {
+            errorMessage = "摄像头没有输出图像。请检查摄像头预览、所选设备或其他正在使用摄像头的应用。"
+        }
+        return false
     }
 
     func stop() {
+        streamGeneration &+= 1
+        framePublisher.setGeneration(streamGeneration)
         sessionQueue.async { [session] in
             if session.isRunning {
                 session.stopRunning()
@@ -159,7 +198,8 @@ final class CameraManager: NSObject {
         }
     }
 
-    fileprivate func publish(frame: CameraFrame) {
+    fileprivate func publish(frame: CameraFrame, generation: UInt64) {
+        guard generation == streamGeneration, isRunning else { return }
         currentFrame = frame
     }
 
@@ -209,12 +249,25 @@ final class CameraManager: NSObject {
         /// is unaffected. The undownscaled `source` is kept alongside for callers needing native pixels (`renderCrop`).
         private let maxLongEdge: CGFloat = 640
         private var nextFrameID: UInt64 = 0
+        private let generationLock = NSLock()
+        private var generation: UInt64 = 0
+
+        nonisolated func setGeneration(_ value: UInt64) {
+            generationLock.lock(); defer { generationLock.unlock() }
+            generation = value
+        }
+
+        private func currentGeneration() -> UInt64 {
+            generationLock.lock(); defer { generationLock.unlock() }
+            return generation
+        }
 
         func captureOutput(
             _ output: AVCaptureOutput,
             didOutput sampleBuffer: CMSampleBuffer,
             from connection: AVCaptureConnection
         ) {
+            let generation = currentGeneration()
             guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
             let sourceImage = CIImage(cvPixelBuffer: pixelBuffer)
             let sourceExtent = sourceImage.extent
@@ -235,7 +288,7 @@ final class CameraManager: NSObject {
             )
 
             Task { @MainActor [weak owner] in
-                owner?.publish(frame: frame)
+                owner?.publish(frame: frame, generation: generation)
             }
         }
     }

@@ -25,7 +25,7 @@ nonisolated enum SecureFaceStore {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let directory = appSupport.appendingPathComponent("glance", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return directory.appendingPathComponent("face-identities.enc")
+        return directory.appendingPathComponent(GlanceCompatibility.faceStoreFilename)
     }()
 
     /// True if a store exists on disk, regardless of whether the session is currently unlocked enough to read it.

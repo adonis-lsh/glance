@@ -253,7 +253,7 @@ struct YourFaceSettingsPage: View {
         Task {
             do {
                 try await Task.detached(priority: .userInitiated) {
-                    try SecureCredentialManager.unlockSession(reason: "验证身份以查看已录入的人脸")
+                    try await SecureCredentialManager.unlockSession(reason: "验证身份以查看已录入的人脸")
                 }.value
                 store.reloadIfUnlocked()
             } catch {

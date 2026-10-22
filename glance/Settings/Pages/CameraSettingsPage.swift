@@ -92,6 +92,14 @@ struct CameraSettingsPage: View {
         .onChange(of: settings.defaultCameraID) { restartPreview() }
         .onChange(of: settings.builtInDisplayCameraID) { restartPreview() }
         .onChange(of: settings.externalDisplayCameraID) { restartPreview() }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.willSleepNotification)) { _ in
+            previewCamera.stop()
+            isPreviewShown = false
+        }
+        .onReceive(DistributedNotificationCenter.default().publisher(for: Notification.Name("com.apple.screenIsLocked"))) { _ in
+            previewCamera.stop()
+            isPreviewShown = false
+        }
     }
 
     /// Live feed, or a placeholder until "Show preview" is tapped — opening

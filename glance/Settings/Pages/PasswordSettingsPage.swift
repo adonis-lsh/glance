@@ -123,6 +123,7 @@ struct PasswordSettingsPage: View {
                 }
             }
 
+            SettingsCaption(text: "兼容版使用登录钥匙串保管密钥，由 Glance 请求系统验证后解锁会话；保护方式与原版钥匙串强制验证不同。")
             if let statusMessage {
                 SettingsCaption(text: statusMessage)
             }

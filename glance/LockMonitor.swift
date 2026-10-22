@@ -124,9 +124,16 @@ final class LockMonitor {
 
     /// Authoritative lock state from the CoreGraphics session server, not a spoofable notification. Fails closed if unavailable.
     nonisolated static func isScreenActuallyLocked() -> Bool {
+        screenLockState() == true
+    }
+
+    /// nil means unavailable. It must not count as proof of successful unlock.
+    nonisolated static func screenLockState() -> Bool? {
         guard let dict = CGSessionCopyCurrentDictionary() as? [String: Any] else {
-            return false
+            return nil
         }
+        // The session dictionary exists while unlocked, but this flag is
+        // absent (verified on macOS 15). Only an unavailable dictionary is nil.
         return (dict["CGSSessionScreenIsLocked"] as? Bool) ?? false
     }
 }

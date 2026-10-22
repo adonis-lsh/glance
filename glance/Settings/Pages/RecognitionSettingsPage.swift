@@ -56,6 +56,12 @@ struct RecognitionSettingsPage: View {
 
     private var unlockedState: some View {
         VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 6) {
+                SettingsSectionTitle(text: "最近一次解锁")
+                SettingsCaption(text: coordinator.statusMessage)
+                if let summary = coordinator.lastScanSummary { SettingsCaption(text: summary) }
+                if let result = coordinator.lastOutcome { SettingsCaption(text: result) }
+            }
             SettingsGroup {
                 SettingsOptionSliderRowContent(
                     title: "匹配置信度",

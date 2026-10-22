@@ -127,7 +127,7 @@ final class GlanceSettings {
         static let hasAcknowledgedSecurityNotice = "GlanceSettings.hasAcknowledgedSecurityNotice"
     }
 
-    @ObservationIgnored private let defaults = UserDefaults.standard
+    @ObservationIgnored private let defaults = UserDefaults(suiteName: GlanceCompatibility.preferencesSuite)!
     /// AppKit owns the actual status item. This callback keeps the persisted
     /// preference independent from that UI lifecycle.
     @ObservationIgnored private var menuBarVisibilityDidChange: ((Bool) -> Void)?

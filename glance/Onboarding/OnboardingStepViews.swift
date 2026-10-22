@@ -114,7 +114,7 @@ struct SecurityNoticeStepView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.leading, 4)
 
-            Text("本应用使用 Mac 的普通摄像头，旨在方便解锁，无法提供高安全级别的身份验证。")
+            Text("本应用使用普通摄像头，旨在方便解锁。此兼容版通过登录钥匙串保存加密密钥，由 Glance 请求系统身份验证；与原版钥匙串强制验证的保护不同。首次使用需要重新录入人脸和密码。")
                 .font(GlanceTheme.Font.passwordCaption)
                 .foregroundStyle(GlanceTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -125,7 +125,7 @@ final class FaceLabController {
         sessionError = nil
         do {
             try await Task.detached(priority: .userInitiated) {
-                try SecureCredentialManager.unlockSession(reason: "验证身份以使用人脸实验室")
+                try await SecureCredentialManager.unlockSession(reason: "验证身份以使用人脸实验室")
             }.value
             store.reloadIfUnlocked()
             log("会话已解锁。")
