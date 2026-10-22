@@ -46,7 +46,7 @@ jobs:
           APP=build/Build/Products/Release/glance.app
           codesign --force --deep --sign - "$APP"
           codesign --verify --deep --strict --verbose=2 "$APP"
-          lipo -verify_arch arm64 x86_64 "$APP/Contents/MacOS/glance"
+          lipo "$APP/Contents/MacOS/glance" -verify_arch arm64 x86_64
           python3 - <<'PY'
           import pathlib, plistlib
           app = pathlib.Path('build/Build/Products/Release/glance.app')
