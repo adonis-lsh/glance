@@ -43,16 +43,20 @@ jobs:
       - name: 签名、验证并生成安装包
         run: |
           set -euo pipefail
-          APP=build/Build/Products/Release/glance.app
+          APP=build/Build/Products/Release/Glance.app
           codesign --force --deep --sign - "$APP"
           codesign --verify --deep --strict --verbose=2 "$APP"
-          lipo "$APP/Contents/MacOS/glance" -verify_arch arm64 x86_64
+          lipo "$APP/Contents/MacOS/Glance" -verify_arch arm64 x86_64
           python3 - <<'PY'
           import pathlib, plistlib
-          app = pathlib.Path('build/Build/Products/Release/glance.app')
+          app = pathlib.Path('build/Build/Products/Release/Glance.app')
           info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
           assert info['CFBundleDevelopmentRegion'] == 'zh-Hans', info
           assert info['GlanceChineseBuild'] is True
+          assert info['CFBundleName'] == 'Glance'
+          assert info['CFBundleDisplayName'] == 'Glance'
+          assert info['CFBundleExecutable'] == 'Glance'
+          assert info['GlanceReleasesURL'] == 'https://github.com/adonis-lsh/glance/releases/latest'
           assert 'SUFeedURL' not in info
           assert '摄像头' in info['NSCameraUsageDescription']
           assert info.get('CFBundleIconName') == 'AppIcon', '应用图标名称错误'
@@ -68,14 +72,14 @@ jobs:
           print('应用图标、中文默认语言、权限文案、独立更新标记与模型资源检查通过')
           PY
           mkdir -p dist staging
-          ditto "$APP" staging/glance.app
+          ditto "$APP" staging/Glance.app
           cp README.zh-CN.md staging/使用说明.txt
           cp LICENSE staging/LICENSE
           ln -s /Applications staging/Applications
           hdiutil create -volname 'Glance 简体中文版' -srcfolder staging \
             -ov -format UDZO dist/Glance-zh-CN-universal.dmg
           ditto -c -k --sequesterRsrc --keepParent "$APP" dist/Glance-zh-CN-universal.zip
-          cp README.zh-CN.md dist/使用说明.txt
+          cp README.zh-CN.md dist/README.zh-CN.txt
           cp LICENSE dist/LICENSE
           (cd dist && shasum -a 256 Glance-zh-CN-universal.dmg Glance-zh-CN-universal.zip > SHA256SUMS.txt)
       - name: 保存构建日志

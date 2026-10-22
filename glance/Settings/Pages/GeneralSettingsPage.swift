@@ -126,7 +126,7 @@ struct GeneralSettingsPage: View {
                 SettingsCaption(text: launchAtLoginError)
             }
             if hasInheritedXcodePermission {
-                SettingsCaption(text: "从 Xcode 运行时，权限检查反映的是 Xcode 的授权状态。请单独打开 glance.app 查看应用的实际权限。")
+                SettingsCaption(text: "从 Xcode 运行时，权限检查反映的是 Xcode 的授权状态。请单独打开 Glance.app 查看应用的实际权限。")
             } else if needsInputMonitoring {
                 inputMonitoringNotice()
             }

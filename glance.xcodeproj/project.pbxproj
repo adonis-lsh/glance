@@ -11,7 +11,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		601C493C300FFC8400D3DE9D /* glance.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = glance.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		601C493C300FFC8400D3DE9D /* Glance.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Glance.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -58,7 +58,7 @@
 		601C493D300FFC8400D3DE9D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				601C493C300FFC8400D3DE9D /* glance.app */,
+				601C493C300FFC8400D3DE9D /* Glance.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -85,8 +85,8 @@
 			packageProductDependencies = (
 				020486DA199A87C9F636359E /* Sparkle */,
 			);
-			productName = glance;
-			productReference = 601C493C300FFC8400D3DE9D /* glance.app */;
+			productName = Glance;
+			productReference = 601C493C300FFC8400D3DE9D /* Glance.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -275,7 +275,7 @@
 				CODE_SIGN_ENTITLEMENTS = glance/glance.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 99KWT739F7;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -292,7 +292,7 @@
 				);
 				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathan.glance;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Glance;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -311,7 +311,7 @@
 				CODE_SIGN_ENTITLEMENTS = glance/glance.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 99KWT739F7;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -328,7 +328,7 @@
 				);
 				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathan.glance;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Glance;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;

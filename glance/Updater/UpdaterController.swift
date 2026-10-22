@@ -61,9 +61,14 @@ final class UpdaterController {
         controller.startUpdater()
     }
 
-    /// User-initiated "Check for Updates" — shows Sparkle's standard progress UI.
+    /// 中文版更新统一打开本分支的 GitHub 最新发行版。
     func checkForUpdates() {
-        guard Bundle.main.object(forInfoDictionaryKey: "GlanceChineseBuild") as? Bool != true else { return }
+        if Bundle.main.object(forInfoDictionaryKey: "GlanceChineseBuild") as? Bool == true {
+            guard let address = Bundle.main.object(forInfoDictionaryKey: "GlanceReleasesURL") as? String,
+                  let url = URL(string: address) else { return }
+            NSWorkspace.shared.open(url)
+            return
+        }
         controller.checkForUpdates(nil)
     }
 }

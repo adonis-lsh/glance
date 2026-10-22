@@ -53,7 +53,7 @@ final class SpaceKeyMonitor {
     }
 
     /// True when launched by Xcode's Run button, which makes TCC decisions attribute to Xcode, not glance — test permission
-    /// behavior from an independently launched copy instead (`open /path/to/glance.app`, or a build in /Applications).
+    /// behavior from an independently launched copy instead (`open /path/to/Glance.app`, or a build in /Applications).
     static var isLaunchedByXcode: Bool {
         ProcessInfo.processInfo.environment["__XCODE_BUILT_PRODUCTS_DIR_PATHS"] != nil
     }

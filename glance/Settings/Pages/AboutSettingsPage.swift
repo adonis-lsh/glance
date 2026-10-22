@@ -51,9 +51,7 @@ struct AboutSettingsPage: View {
                 title: "中文版更新",
                 buttonTitle: "查看版本"
             ) {
-                if let url = URL(string: "https://github.com/adonis-lsh/glance/releases") {
-                    NSWorkspace.shared.open(url)
-                }
+                updater.checkForUpdates()
             }
 
             SettingsGroupDivider()
